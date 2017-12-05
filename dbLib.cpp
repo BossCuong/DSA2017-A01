@@ -70,7 +70,7 @@ void loadNinjaDB(char* fName, L1List<NinjaInfo_t> &db) {
         time_string = ninja_timestamp.str();
         strcpy(time_char,time_string.c_str());
         struct tm tm;
-        strptime(time_char,"%d/%m/%Y %H:%M:%S", &tm);
+        strptime(time_char,"%m/%d/%Y %H:%M:%S", &tm);
         time_t time_stamp = timegm(&tm);
         ninja_temp.timestamp = time_stamp;  
 
@@ -140,7 +140,6 @@ void process(L1List<ninjaEvent_t>& eventList, L1List<NinjaInfo_t>& bList) {
         if(!processEvent(event, bList, pGData))
         {
             cout << event.code << " is an invalid event\n";
-            pRunEventList = pRunEventList->pNext;
         }
         else if (strcmp(event.code,"0") == 0)
         {

@@ -196,8 +196,8 @@ bool find_last_stopping_time(NinjaInfo_t ninja,L1List<NinjaInfo_t>& nList,L1Item
                     continue;
                 }
             }
+            ninja_pre = ninja_cur;
         }
-        ninja_pre = ninja_cur;
         ninja_cur = ninja_cur->pNext;
     }
 
@@ -283,8 +283,8 @@ int get_number_stopping_time(NinjaInfo_t ninja,L1List<NinjaInfo_t>& nList)
                     continue;
                 }
             }
+            ninja_pre = ninja_cur;
         }
-        ninja_pre = ninja_cur;
         ninja_cur = ninja_cur->pNext;
     }
     return cnt;
@@ -394,7 +394,7 @@ void print_max_distance_ID(ninjaEvent_t& event, L1List<NinjaInfo_t>& nList)
 
     //Traverse to first time data exist in data base
     L1Item<NinjaInfo_t>* _pRun = nList.get_pHead();
-    ID_List.push_back(_pRun->data);
+    ID_List.insertHead(_pRun->data);
     while (_pRun)
     {
         //Add ID to ID_List,if it exist in ID_List,skip it
@@ -478,8 +478,8 @@ time_t get_moving_time(NinjaInfo_t& ninja,L1List<NinjaInfo_t>& nList)
                 }
                 else sum_of_moving_time += difftime(ninja_cur->data.timestamp,ninja_pre->data.timestamp);
             }
-        }
-        ninja_pre = ninja_cur;
+            ninja_pre = ninja_cur;
+        }       
         ninja_cur = ninja_cur->pNext;
     }
     return sum_of_moving_time;
@@ -499,7 +499,7 @@ void print_max_moving_time(ninjaEvent_t& event, L1List<NinjaInfo_t>& nList)
 
     //Traverse list
     L1Item<NinjaInfo_t>* _pRun = nList.get_pHead();
-    ID_List.push_back(_pRun->data);
+    ID_List.insertHead(_pRun->data);
     while (_pRun)
     {
         //Add ID to ID_List,if it exist in ID_List,skip it
@@ -608,66 +608,56 @@ void print_eliminated_ninja_ID(ninjaEvent_t& event, L1List<NinjaInfo_t>& nList)
 ////
 time_t get_stopping_time(NinjaInfo_t& ninja,L1List<NinjaInfo_t>& nList)
 {
-    time_t sum_of_time = 0;
-    L1Item<NinjaInfo_t>* _pRun;
-    if(!isNinjaExist(ninja,nList,_pRun))
+    //Store sum of moving time
+    time_t sum_of_stopping_time = 0;
+    //Current ninja point
+    L1Item<NinjaInfo_t>* ninja_cur;
+    //Check does ninja exist,if exist return pos of ninja in database by ninja_cur
+    if(!isNinjaExist(ninja,nList,ninja_cur))
         return -1;
 
-    //Ninja stading point
-    NinjaInfo_t ninja_stand;
-
     //
-    NinjaInfo_t ninja_pre;
+    L1Item<NinjaInfo_t>* ninja_pre;
 
-    //Current longitude and latitude of ninja
-    NinjaInfo_t ninja_cur;
+    //Ninja stading point
+    L1Item<NinjaInfo_t>* ninja_stand;
 
     //Construct a value for longitude and laitude,it is the first point
-    ninja_stand = ninja_cur = _pRun->data;
+    ninja_stand = ninja_pre = ninja_cur;
 
     //Distance of two position
     double distance_of_two_position = 0;
 
     bool change_stand = false;
-
     //Traverse a List,begin form _pRun
-    while(_pRun)
+    while(ninja_cur)
     {
-        if(_pRun->data == ninja.id)
+        if(ninja_cur->data == ninja.id)
         {
-            ninja_pre.timestamp = ninja_cur.timestamp;
-            ninja_pre.longitude = ninja_cur.longitude;
-            ninja_pre.latitude  = ninja_cur.latitude;
-
-            ninja_cur.timestamp = _pRun->data.timestamp;
-            ninja_cur.longitude = _pRun->data.longitude;
-            ninja_cur.latitude  = _pRun->data.latitude;
-
             if(!change_stand)
             {
-                distance_of_two_position = distanceEarth(ninja_stand.latitude, ninja_stand.longitude, ninja_cur.latitude, ninja_cur.longitude);
+                distance_of_two_position = distanceEarth(ninja_stand->data.latitude, ninja_stand->data.longitude, ninja_cur->data.latitude, ninja_cur->data.longitude);
                 if (distance_of_two_position > (double(5) / 1000))
                 {
-                    change_stand = true; 
-                    sum_of_time += ninja_pre.timestamp - ninja_stand.timestamp;
+                    change_stand = true;
                 }
+                else  sum_of_stopping_time += difftime(ninja_cur->data.timestamp,ninja_pre->data.timestamp);
             }
             else
             {
-                distance_of_two_position = distanceEarth(ninja_pre.latitude, ninja_pre.longitude, ninja_cur.latitude, ninja_cur.longitude);
+                distance_of_two_position = distanceEarth(ninja_pre->data.latitude, ninja_pre->data.longitude, ninja_cur->data.latitude, ninja_cur->data.longitude);
                 if (distance_of_two_position <= (double(5) / 1000))
                 {
                     change_stand = false;
-                    ninja_stand.timestamp = ninja_pre.timestamp;
-                    ninja_stand.longitude = ninja_pre.longitude;
-                    ninja_stand.latitude  = ninja_pre.latitude;
-                    continue;
+                    ninja_stand  = ninja_pre;
+                    continue; //Continue to get p_pre = p_Stand,pcur = pstand->next
                 }
             }
+            ninja_pre = ninja_cur;
         }
-        _pRun = _pRun->pNext;
+        ninja_cur = ninja_cur->pNext;
     }
-    return sum_of_time;
+    return sum_of_stopping_time;
 }
 void print_max_stopping_time_ID(ninjaEvent_t& event, L1List<NinjaInfo_t>& nList)
 {
@@ -683,20 +673,20 @@ void print_max_stopping_time_ID(ninjaEvent_t& event, L1List<NinjaInfo_t>& nList)
 
     //Traverse list
     L1Item<NinjaInfo_t>* _pRun = nList.get_pHead();
-    ID_List.push_back(_pRun->data);
+    ID_List.insertHead(_pRun->data);
     while (_pRun)
     {
         //Add ID to ID_List,if it exist in ID_List,skip it
         if(!ID_List.find(_pRun->data,dont_care))
-            ID_List.push_back(_pRun->data);
+            ID_List.insertHead(_pRun->data);
 
         _pRun = _pRun->pNext;
     }
 
     //Store maximum ninja stopping time
-    time_t max_moving_time = 0;
+    time_t max_stopping_time = 0;
     //Store temporary ninja stopping time
-    time_t temp_moving_time;
+    time_t temp_stopping_time;
     //Store ninja ID have maximum stopping time
     string Ninja_ID_have_max_stopping_time;
 
@@ -706,11 +696,11 @@ void print_max_stopping_time_ID(ninjaEvent_t& event, L1List<NinjaInfo_t>& nList)
     while(_pRun)
     {
         //Get ninja stopping time of each ID in ID_List
-        temp_moving_time = get_stopping_time(_pRun->data,nList);
+        temp_stopping_time = get_stopping_time(_pRun->data,nList);
         //Compare with maximum ninja stopping time,if max < temp then max = temp
-        if(max_moving_time < temp_moving_time)
+        if(max_stopping_time < temp_stopping_time)
         {
-            max_moving_time = temp_moving_time;
+            max_stopping_time = temp_stopping_time;
             Ninja_ID_have_max_stopping_time = _pRun->data.id;
         }
         _pRun = _pRun->pNext;
@@ -738,19 +728,19 @@ bool isNinjaLost(NinjaInfo_t& ninja,L1List<NinjaInfo_t>& nList)
     while (_pRun)
     {
         if(_pRun->data == ninja)
-            check_list.push_back(_pRun->data);
+            check_list.insertHead(_pRun->data);
         _pRun = _pRun->pNext;
     }
 
     //Never happen if just have 3 point
-    if(check_list.getSize() <= 3) return false;
+    if(check_list.getSize() <= 4) return false;
 
     //
     L1Item<NinjaInfo_t>* ninja_data_src_ptr = check_list.get_pHead();
     //
     L1Item<NinjaInfo_t>* ninja_data_temp_ptr = ninja_data_src_ptr->pNext->pNext->pNext;
-    if(check_list.getSize() == 4)
-        return isClosed(ninja_data_src_ptr->data, ninja_data_temp_ptr->data);
+    // if(check_list.getSize() == 4)
+    //     return isClosed(ninja_data_src_ptr->data, ninja_data_temp_ptr->data);
 
     while (ninja_data_temp_ptr->pNext)
     {
@@ -786,12 +776,12 @@ void print_lost_ninja_list(ninjaEvent_t& event, L1List<NinjaInfo_t>& nList)
 
     //Traverse list
     L1Item<NinjaInfo_t>* _pRun = nList.get_pHead();
-    ID_List.push_back(_pRun->data);
+    ID_List.insertHead(_pRun->data);
     while (_pRun)
     {
         //Add ID to ID_List,if it exist in ID_List,skip it
         if(!ID_List.find(_pRun->data,dont_care))
-            ID_List.push_back(_pRun->data);
+            ID_List.insertHead(_pRun->data);
 
         _pRun = _pRun->pNext;
     }
@@ -801,7 +791,7 @@ void print_lost_ninja_list(ninjaEvent_t& event, L1List<NinjaInfo_t>& nList)
     while (_pRun)
     {
         if(isNinjaLost(_pRun->data,nList))
-            Lost_List.push_back(_pRun->data);
+            Lost_List.insertHead(_pRun->data);
         _pRun = _pRun->pNext;
     }
 
@@ -837,27 +827,46 @@ bool processEvent(ninjaEvent_t& event, L1List<NinjaInfo_t>& nList, void* pGData)
     string SaveNinja_ID ="13";
     string LostNinja_ID = "14";
 
-    if(code.length() == 2 || code.length() == 1 || code.length() == 6 || code.length() == 18) {
+    if(code.length() == 1) {
+        if (code == EventCode)                   return true;
+        else if (code == FristNinja_ID)          return true;
+        else if (code == LastNinja_ID)           return true;
+        else if (code == NumberOfNinja)          print_number_Ninja(event, nList);
+        else if (code == ID_MaxSumOfDistance)    print_max_distance_ID(event, nList);
+        else if (code == MaxID)                  print_max_NinjaID(event, nList);
+        else return false;
+    }
+    else if(code.length() == 2)  {
         code = code.substr(0,2);
-        if (code == EventCode)                return true;
-        else if (code == FristNinja_ID)       return true;
-        else if (code == LastNinja_ID)        return true;
-        else if (code == NumberOfNinja)       print_number_Ninja(event, nList);
-        else if (code == MaxID)               print_max_NinjaID(event, nList);
-        else if (code == ID_MaxSumOfDistance) print_max_distance_ID(event, nList);
-        else if (code == ID_MaxTimeMoving)    print_max_moving_time(event,nList);
-        else if (code == ID_EliminatedNinja)  print_eliminated_ninja_ID(event,nList);
-        else if (code == NarutoID)            print_max_stopping_time_ID(event,nList);
-        else if (code == LostNinja_ID)        print_lost_ninja_list(event,nList);
-        else if (code == SaveNinja_ID)        return true;
+
+        if (code == ID_MaxTimeMoving)            print_max_moving_time(event,nList);
+        else if (code == NarutoID)               print_max_stopping_time_ID(event,nList);
+        else if (code == LostNinja_ID)           print_lost_ninja_list(event,nList);
+       
         else return false;
     }
     else if(code.length() == 5) {
         code = code.substr(0,1);
-        if (code == FristMovingTime)          print_frist_moving_time(event, nList);
-        else if (code == LastStoppingTime)    print_last_stopping_time(event, nList);
-        else if (code == NumberOfStoppingTime)print_number_stopping_time(event, nList);
-        else if (code == SumOfDistance)       print_sum_of_distance(event, nList);
+
+        if      (code == FristMovingTime)         print_frist_moving_time(event, nList);
+        else if (code == LastStoppingTime)        print_last_stopping_time(event, nList);
+        else if (code == NumberOfStoppingTime)    print_number_stopping_time(event, nList);
+        else if (code == SumOfDistance)           print_sum_of_distance(event, nList);
+
+        else return false;
+    }
+    else if(code.length() == 6) {
+        code = code.substr(0,2);
+
+        if (code == ID_EliminatedNinja)           print_eliminated_ninja_ID(event,nList);
+
+        else return false;
+    }
+    else if(code.length() == 18) {
+        code = code.substr(0,2);
+
+        if (code == SaveNinja_ID)                 return true;
+
         else return false;
     }
     else return false;

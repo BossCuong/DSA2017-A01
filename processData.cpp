@@ -723,41 +723,89 @@ bool isNinjaLost(NinjaInfo_t& ninja,L1List<NinjaInfo_t>& nList)
 {
     //List to store all ninja database have same ID
     L1List<NinjaInfo_t> check_list;
+
+    L1Item<NinjaInfo_t>* ninja_temp;
+    
+    //Ninja stading point
+    L1Item<NinjaInfo_t>* ninja_stand;
+
+    //
+    L1Item<NinjaInfo_t>* ninja_pre;
+
+
+    L1Item<NinjaInfo_t>* ninja_cur;
+
+    double distance_of_two_position = 0;
+    
+    bool change_stand = false;
     //Insert all database have same ID to check_list
-    L1Item<NinjaInfo_t>* _pRun = nList.get_pHead();
-    while (_pRun)
+    isNinjaExist(ninja,nList,ninja_cur);
+    ninja_cur = nList.get_pHead();
+    ninja_stand = ninja_cur;
+    check_list.insertHead(ninja_stand->data);
+    while(ninja_cur)
     {
-        if(_pRun->data == ninja)
-            check_list.insertHead(_pRun->data);
-        _pRun = _pRun->pNext;
-    }
-
-    //Never happen if just have 3 point
-    if(check_list.getSize() <= 4) return false;
-
-    //
-    L1Item<NinjaInfo_t>* ninja_data_src_ptr = check_list.get_pHead();
-    //
-    L1Item<NinjaInfo_t>* ninja_data_temp_ptr = ninja_data_src_ptr->pNext->pNext->pNext;
-    // if(check_list.getSize() == 4)
-    //     return isClosed(ninja_data_src_ptr->data, ninja_data_temp_ptr->data);
-
-    while (ninja_data_temp_ptr->pNext)
-    {
-        if(isClosed(ninja_data_src_ptr->data,ninja_data_temp_ptr->data)) return true;
-        ninja_data_temp_ptr = ninja_data_temp_ptr->pNext;
-    }
-
-    ninja_data_src_ptr = check_list.get_pHead()->pNext;
-    while (ninja_data_src_ptr->pNext->pNext->pNext)
-    {
-        ninja_data_temp_ptr = ninja_data_src_ptr->pNext->pNext->pNext;
-        while(ninja_data_temp_ptr)
+        if(ninja_cur->data == ninja.id)
         {
-            if(isClosed(ninja_data_src_ptr->data,ninja_data_temp_ptr->data)) return true;
-            ninja_data_temp_ptr = ninja_data_temp_ptr->pNext;
+            if(!change_stand)
+            {
+                distance_of_two_position = distanceEarth(ninja_stand->data.latitude, ninja_stand->data.longitude, ninja_cur->data.latitude, ninja_cur->data.longitude);
+                if (distance_of_two_position > (double(5) / 1000))
+                {
+                    check_list.insertHead(ninja_cur->data);
+                    change_stand = true;
+                }
+            }
+            else
+            {
+                distance_of_two_position = distanceEarth(ninja_pre->data.latitude, ninja_pre->data.longitude, ninja_cur->data.latitude, ninja_cur->data.longitude);
+                if (distance_of_two_position <= (double(5) / 1000))
+                {
+                    change_stand = false;
+                    ninja_stand  = ninja_pre;
+                    continue; //Continue to get p_pre = p_Stand,pcur = pstand->next
+                }
+                else check_list.insertHead(ninja_cur->data);;
+            }
+            ninja_pre = ninja_cur;
+        }       
+        ninja_cur = ninja_cur->pNext;
+    }
+    if(check_list.getSize() <= 2) return false;
+
+    //**************************************************************//
+
+    ninja_cur = check_list.get_pHead();
+    ninja_temp = ninja_cur->pNext->pNext;
+
+    
+        //return isClosed(ninja_cur->data, ninja_temp->data);
+     if(check_list.getSize() == 3)
+     {
+        distance_of_two_position = distanceEarth(ninja_cur->data.latitude, ninja_cur->data.longitude, ninja_temp->data.latitude, ninja_temp->data.longitude);
+        if(distance_of_two_position <= (double(5) / 1000)) return true;
+      }
+
+    while (ninja_temp->pNext)
+    {
+        //if(isClosed(ninja_cur->data,ninja_temp->data)) return true;
+        distance_of_two_position = distanceEarth(ninja_cur->data.latitude, ninja_cur->data.longitude, ninja_temp->data.latitude, ninja_temp->data.longitude);
+        if(distance_of_two_position <= (double(5) / 1000)) return true;
+        ninja_temp = ninja_temp->pNext;
+    }
+
+    ninja_cur = check_list.get_pHead()->pNext;
+    while (ninja_cur->pNext->pNext)
+    {
+        ninja_temp = ninja_cur->pNext->pNext;
+        while(ninja_temp)
+        {
+            //if(isClosed(ninja_cur->data,ninja_temp->data)) return true;
+            distance_of_two_position = distanceEarth(ninja_cur->data.latitude, ninja_cur->data.longitude, ninja_temp->data.latitude, ninja_temp->data.longitude);
+            if(distance_of_two_position <= (double(5) / 1000)) return true;
+            ninja_temp = ninja_temp->pNext;
         }
-        ninja_data_src_ptr = ninja_data_src_ptr->pNext;
+        ninja_cur = ninja_cur->pNext;
     }
 
     return false;

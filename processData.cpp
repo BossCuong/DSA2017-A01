@@ -88,12 +88,18 @@ bool find_first_moving_time(NinjaInfo_t ninja,L1List<NinjaInfo_t>& nList,L1Item<
     double distance_of_stand_cur = 0;
 
     //Traverse a List,begin form _pRun
-    if(ninja_cur->pNext == NULL)
+    ninja_cur = ninja_cur->pNext;
+    while(ninja_cur)
+    {
+        if(ninja_cur->data == ninja.id)
+            break;
+        ninja_cur = ninja_cur->pNext;
+    }
+    if(ninja_cur == NULL)
     {
         first_moving_time = ninja_stand;
         return first_moving_time;
     }
-    ninja_cur = ninja_cur->pNext;
     distance_of_stand_cur = distanceEarth(ninja_stand->data.latitude, ninja_stand->data.longitude, ninja_cur->data.latitude, ninja_cur->data.longitude);
     if (distance_of_stand_cur > (double(5)/1000))
     {
@@ -159,14 +165,18 @@ bool find_last_stopping_time(NinjaInfo_t ninja,L1List<NinjaInfo_t>& nList,L1Item
     //Construct a value for longitude and laitude,it is the first point
     ninja_stand = ninja_pre = ninja_cur;
 
-    if(ninja_cur->pNext == NULL)
+    ninja_cur = ninja_cur->pNext;
+    while(ninja_cur)
+    {
+        if(ninja_cur->data == ninja.id)
+            break;
+        ninja_cur = ninja_cur->pNext;
+    }
+    if(ninja_cur == NULL)
     {
         last_stopping_time = NULL;
         return true;
     }
-    
-    ninja_cur = ninja_cur->pNext;
-
     int cnt;
     if(distanceEarth(ninja_stand->data.latitude, ninja_stand->data.longitude, ninja_cur->data.latitude, ninja_cur->data.longitude) <= (double(5)/1000))
         cnt = 1;
@@ -251,9 +261,15 @@ int get_number_stopping_time(NinjaInfo_t ninja,L1List<NinjaInfo_t>& nList)
     ninja_stand = ninja_pre = ninja_cur;
     int cnt = 0;
     //***************************
-    if(ninja_cur->pNext == NULL)
-        return cnt;
     ninja_cur = ninja_cur->pNext;
+    while(ninja_cur)
+    {
+        if(ninja_cur->data == ninja.id)
+            break;
+        ninja_cur = ninja_cur->pNext;
+    }
+    if(ninja_cur == NULL)
+        return cnt;
 
     if(distanceEarth(ninja_stand->data.latitude, ninja_stand->data.longitude, ninja_cur->data.latitude, ninja_cur->data.longitude) <= (double(5)/1000))
         cnt = 1;
@@ -427,7 +443,9 @@ void print_max_distance_ID(ninjaEvent_t& event, L1List<NinjaInfo_t>& nList)
         _pRun = _pRun->pNext;
     }
 
-    cout << event.code << ": " << Ninja_ID_have_max_distance;
+    if(max_distance == 0)
+        cout << event.code << ": " << nList.get_pHead()->data.id;
+    else cout << event.code << ": " << Ninja_ID_have_max_distance;
 
 }
 time_t get_moving_time(NinjaInfo_t& ninja,L1List<NinjaInfo_t>& nList)
@@ -533,7 +551,9 @@ void print_max_moving_time(ninjaEvent_t& event, L1List<NinjaInfo_t>& nList)
         _pRun = _pRun->pNext;
     }
 
-    cout << event.code << ": " << Ninja_ID_have_max_moving_time;
+    if(max_moving_time == 0)
+         cout << event.code << ": " << nList.get_pHead()->data.id;
+    else cout << event.code << ": " << Ninja_ID_have_max_moving_time;
 }
 ////
 void print_eliminated_ninja_ID(ninjaEvent_t& event, L1List<NinjaInfo_t>& nList)
@@ -706,7 +726,9 @@ void print_max_stopping_time_ID(ninjaEvent_t& event, L1List<NinjaInfo_t>& nList)
         _pRun = _pRun->pNext;
     }
 
-    cout << event.code << ": " << Ninja_ID_have_max_stopping_time;
+    if(max_stopping_time == 0)
+         cout << event.code << ": " << nList.get_pHead()->data.id;
+    else cout << event.code << ": " << Ninja_ID_have_max_stopping_time;
 }
 ////
 
@@ -740,7 +762,6 @@ bool isNinjaLost(NinjaInfo_t& ninja,L1List<NinjaInfo_t>& nList)
     bool change_stand = false;
     //Insert all database have same ID to check_list
     isNinjaExist(ninja,nList,ninja_cur);
-    ninja_cur = nList.get_pHead();
     ninja_stand = ninja_cur;
     check_list.insertHead(ninja_stand->data);
     while(ninja_cur)
@@ -771,7 +792,7 @@ bool isNinjaLost(NinjaInfo_t& ninja,L1List<NinjaInfo_t>& nList)
         }       
         ninja_cur = ninja_cur->pNext;
     }
-    if(check_list.getSize() <= 2) return false;
+    if(check_list.getSize() <= 3) return false;
 
     //**************************************************************//
 
@@ -780,11 +801,11 @@ bool isNinjaLost(NinjaInfo_t& ninja,L1List<NinjaInfo_t>& nList)
 
     
         //return isClosed(ninja_cur->data, ninja_temp->data);
-     if(check_list.getSize() == 3)
-     {
-        distance_of_two_position = distanceEarth(ninja_cur->data.latitude, ninja_cur->data.longitude, ninja_temp->data.latitude, ninja_temp->data.longitude);
-        if(distance_of_two_position <= (double(5) / 1000)) return true;
-      }
+    //  if(check_list.getSize() == 3)
+    //  {
+    //     distance_of_two_position = distanceEarth(ninja_cur->data.latitude, ninja_cur->data.longitude, ninja_temp->data.latitude, ninja_temp->data.longitude);
+    //     if(distance_of_two_position <= (double(5) / 1000)) return true;
+    //   }
 
     while (ninja_temp->pNext)
     {
@@ -875,48 +896,22 @@ bool processEvent(ninjaEvent_t& event, L1List<NinjaInfo_t>& nList, void* pGData)
     string SaveNinja_ID ="13";
     string LostNinja_ID = "14";
 
-    if(code.length() == 1) {
-        if (code == EventCode)                   return true;
-        else if (code == FristNinja_ID)          return true;
-        else if (code == LastNinja_ID)           return true;
-        else if (code == NumberOfNinja)          print_number_Ninja(event, nList);
-        else if (code == ID_MaxSumOfDistance)    print_max_distance_ID(event, nList);
-        else if (code == MaxID)                  print_max_NinjaID(event, nList);
-        else return false;
-    }
-    else if(code.length() == 2)  {
-        code = code.substr(0,2);
-
-        if (code == ID_MaxTimeMoving)            print_max_moving_time(event,nList);
-        else if (code == NarutoID)               print_max_stopping_time_ID(event,nList);
-        else if (code == LostNinja_ID)           print_lost_ninja_list(event,nList);
-       
-        else return false;
-    }
-    else if(code.length() == 5) {
-        code = code.substr(0,1);
-
-        if      (code == FristMovingTime)         print_frist_moving_time(event, nList);
-        else if (code == LastStoppingTime)        print_last_stopping_time(event, nList);
-        else if (code == NumberOfStoppingTime)    print_number_stopping_time(event, nList);
-        else if (code == SumOfDistance)           print_sum_of_distance(event, nList);
-
-        else return false;
-    }
-    else if(code.length() == 6) {
-        code = code.substr(0,2);
-
-        if (code == ID_EliminatedNinja)           print_eliminated_ninja_ID(event,nList);
-
-        else return false;
-    }
-    else if(code.length() == 18) {
-        code = code.substr(0,2);
-
-        if (code == SaveNinja_ID)                 return true;
-
-        else return false;
-    }
+    if (code == EventCode)                   return true;
+    else if (code == FristNinja_ID)          return true;
+    else if (code == LastNinja_ID)           return true;
+    else if (code == NumberOfNinja)          print_number_Ninja(event, nList);
+    else if (code == MaxID)                  print_max_NinjaID(event, nList);
+    else if (code == ID_MaxSumOfDistance)    print_max_distance_ID(event, nList);
+   
+    else if (code == ID_MaxTimeMoving)                                             print_max_moving_time(event,nList);
+    else if (code == NarutoID)                                                     print_max_stopping_time_ID(event,nList);
+    else if (code == LostNinja_ID)                                                 print_lost_ninja_list(event,nList);
+    else if ((code.substr(0,1) == FristMovingTime) && (code.length() > 1))         print_frist_moving_time(event, nList);
+    else if ((code.substr(0,1) == LastStoppingTime) && (code.length() > 1))        print_last_stopping_time(event, nList);     
+    else if( (code.substr(0,1) == NumberOfStoppingTime) && (code.length() > 1))    print_number_stopping_time(event, nList);
+    else if ((code.substr(0,1) == SumOfDistance) && (code.length() > 1))           print_sum_of_distance(event, nList);
+    else if ((code.substr(0,2) == ID_EliminatedNinja) && (code.length() > 2))      print_eliminated_ninja_ID(event,nList);
+    else if ((code.substr(0,2) == SaveNinja_ID) && (code.length() > 2))            return true;    
     else return false;
     cout << endl;
     /// NOTE: The output of the event will be printed on one line
